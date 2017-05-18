@@ -76,9 +76,8 @@ node {
 				git url: gitPipelineBranched
 
 				sh 'oc create -f bc-kitchensink-imagecreator.yaml'
-				openshiftBuild(buildConfig: 'kitchensink-imagecreator', showBuildLogs:
+				openshiftBuild(buildConfig: 'kitchensink-imagecreator', showBuildLogs: 'true')
 				sh 'oc delete bc/kitchensink-imagecreator'
-'true')
     }
     
     stage('Publish Green/Blue') {
