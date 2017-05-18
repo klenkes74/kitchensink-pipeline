@@ -3,7 +3,7 @@ node('maven') {
 		def gitSource = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink.git'
 
 		def mvnCommand = 'mvn -s .openshift/nexus_settings.xml -P openshift '
-		def mvnNonTest = mvnCommand + ' -RskipTests=true -DskipITs=true -DskipUTs=true '
+		def mvnNonTest = mvnCommand + '-DskipTests=true -DskipITs=true -DskipUTs=true '
 
 		def prepareGitPush = 'git config user.email jenkins@example.opentlc.com && git config user.name jenkins'
 		def nexusUrl = 'http://nexus3-user2-nexus.apps.advdev.openshift.opentlc.com/repository/maven-releases'
