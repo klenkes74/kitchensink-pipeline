@@ -20,7 +20,7 @@ def routeGreen		= "${application}-green"
 def routeBlue			= "${application}-blue"
 
 def testEnv       = "dev-${env.BUILD_TAG}"
-dev prodEnv      	= "user2-kitchensink-prod"
+def prodEnv      	= "user2-kitchensink-prod"
 
 node('maven') {
   stage('SCM') {
