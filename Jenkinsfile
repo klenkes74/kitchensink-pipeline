@@ -10,17 +10,6 @@ node('maven') {
 
 		def branchName = env.BUILD_TAG
 
-		stage('Play') {
-				git url: gitSource
-
-        sh 'git checkout -b ' + branchName
-				sh prepareGitPush
-        sh 'git push origin ' + branchName
-
-				sh 'git clone ' + gitPipeline + ' pipeline'
-				sh '(cd pipeline && git checkout -b ' + branchName + ')'
-		}
-
     stage('Prepare') {
         git url: gitSource
 
@@ -51,24 +40,21 @@ node('maven') {
         def pom = readMavenPom file: 'pom.xml'
 
 				sh 'git clone ' + gitPipeline + ' pipeline'
-				sh 'cd pipeline'
-				sh 'git checkout -b ' + branchName
+				sh '(cd pipeline && git checkout -b ' + branchName + ')'
 
 				// first time using only > to overwrite the current file
-				sh 'echo NEXUS_HOST="$nexusUrl" 																 >  .s2i/environment'
-				sh 'echo WAR_VERSION="'			+ pom.version 									+ '" >> .s2i/environment'
-				sh 'echo MAVEN_GROUP="'			+ pom.groupId.replace('.','/') 	+	'" >> .s2i/environment'
-				sh 'echo MAVEN_ARTIFACT="' 	+ pom.artifactId                + '" >> .s2i/environment'
+				sh 'echo NEXUS_HOST="$nexusUrl" 																 > pipeline/.s2i/environment'
+				sh 'echo WAR_VERSION="'			+ pom.version 									+ '" >> pipeline/.s2i/environment'
+				sh 'echo MAVEN_GROUP="'			+ pom.groupId.replace('.','/') 	+	'" >> pipeline/.s2i/environment'
+				sh 'echo MAVEN_ARTIFACT="' 	+ pom.artifactId                + '" >> pipeline/.s2i/environment'
 				sh 'echo WAR_FILE_LOCATION="' + nexusUrl
 																			+ '/' + pom.groupId.replace(".","/") 
 																			+ '/' + pom.version
 																			+ '/' + pom.artifactId 
 																			+ '-' + pom.version
-																			+ '.war" >> .s2i/environment'
+																			+ '.war" >> pipeline/.s2i/environment'
 
-				sh 'git commit -am "Build run ' + branchName + '"'
-				sh prepareGitPush
-        sh 'git push origin ' + branchName
+				sh '(cd pipeline && git commit -am "Build run ' + branchName + '" && ' + prepareGitPush + 'git push origin ' + branchName + ")'
     }
     
     stage('Build OpenShift Image') {
