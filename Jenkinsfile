@@ -18,8 +18,7 @@ node('maven') {
         sh 'git push origin ' + branchName
 
 				sh 'git clone ' + gitPipeline + ' pipeline'
-				sh 'cd pipeline'
-				sh 'git checkout -b ' + branchName
+				sh '(cd pipeline && git checkout -b ' + branchName + ')'
 		}
 
     stage('Prepare') {
