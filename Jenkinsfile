@@ -18,10 +18,10 @@ node('maven') {
 
     stage('Prepare') {
         git url: gitSource
+        sh 'git checkout -b ' + branchName
 
         sh mvnNonTest + 'build-helper:parse-version versions:set -DbuildNumber=$BUILD_NUMBER \'-DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${buildNumber}\''
 
-        sh 'git checkout -b ' + branchName
 				sh prepareGitPush
         sh 'git push origin ' + branchName
     }
@@ -65,6 +65,11 @@ node('maven') {
 }
 
 node { 
+		def gitOCP = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-ocp.git'
+		def gitSource = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink.git'
+
+		def branchName = env.BUILD_TAG		
+
     stage('Build OpenShift Image') {
 				sh 'git clone ' + gitOCP + '#' + branchName + ' ocp'
 				sh 'oc create -f ocp/bc-kitchensink-imagecreator.yaml'
