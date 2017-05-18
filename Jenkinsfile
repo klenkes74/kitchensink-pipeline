@@ -16,6 +16,9 @@ def nexusUrl      = 'http://nexus3-user2-nexus.apps.advdev.openshift.opentlc.com
 def branchName    = env.BUILD_TAG
 
 def application   = "kitchensink"
+def routeGreen		= "${application}-green"
+def routeBlue			= "${application}-blue"
+
 def testEnv       = "dev-${env.BUILD_TAG}"
 dev prodEnv      	= "user2-kitchensink-prod"
 
@@ -66,6 +69,8 @@ node('maven') {
   stage('Prepare Test Environment') {
     echo "Creating test environment: ${testEnv} ..."
     sh "oc new-project ${testEnv}"
+
+		sh "oc new-app -e POSTGRESQL_USER=<username> -e POSTGRESQL_PASSWORD=<password> -e POSTGRESQL_DATABASE=<database_name>
   }
   
   stage('Build OpenShift Image') {
@@ -104,6 +109,12 @@ node('maven') {
 
 
   stage('Publish Green/Blue') {
+    sh "oc project ${prodEnv}"
+    sh "oc get route ${application} -n ${prodEnv} -o template --template='{{ .spec.to.name }}' > route-target"
+
+		def current = currentTarget()
+		echo "Deploy to production: ${current}"
+
     openshiftTag    destTag: "prod",
                     destStream: "kitchensink",
                     destinationNamespace: testEnv,
@@ -112,16 +123,19 @@ node('maven') {
                     namespace: testEnv,
                     alias: 'false',
                     verbose: 'false'
+
   }
     
   stage('Go Live') {
-
-    def new = newTarget()
     def current = currentTarget();
+		
+		if (current != "") {
+    	def new = newTarget()
 
-    input "Activate version '${env.BUILD_TAG}' by switching from '${current}' to '${new}' in environment '${prodEnv}'?"
+    	input "Activate version '${env.BUILD_TAG}' by switching from '${current}' to '${new}' in environment '${prodEnv}'?"
 
-    sh "oc patch -n ${prodEnv} route/tasks --patch '{\"spec\":{\"to\":{\"name\":\"${new}\"}}}'"
+    	sh "oc patch -n ${prodEnv} route/tasks --patch '{\"spec\":{\"to\":{\"name\":\"${new}\"}}}'"
+		}
   }
 
   stage('Tear Down Testing Environment') {
@@ -131,9 +145,6 @@ node('maven') {
 
 
   def currentTarget() {
-    sh "oc project ${prodEnv}"
-    sh "oc get route tasks -n ${prodEnv} -o template --template='{{ .spec.to.name }}' > route-target"
-
     def result = readFile 'route-target'
     return result
   }
@@ -142,12 +153,12 @@ node('maven') {
     def current = currentTarget()
     def result = ""
 
-    if (current == "${application}-blue") {
-      result = "${application}-green"
-    } else if (current == "${application}-green") {
-      result = "${application}-blue"
+    if (current == routeBlue) {
+      result = routeGreen
+    } else if (current == routeGreen) {
+      result = routeBlue
     } else {
-      echo "OOPS ..."
+      echo "Sorry, route '${current}' not known. Can't generate new target!"
     }
 
     return result
