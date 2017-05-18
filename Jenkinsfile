@@ -1,4 +1,6 @@
 node {
+		sh 'echo $BUILD_TAG'
+    def branchName = env.BUILD_TAG
     sh 'echo === Environment of host ==='
 		sh 'env'
     sh 'echo ==========================='
@@ -12,18 +14,18 @@ node('maven') {
 		def gitPipeline = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-pipeline.git'
 		def gitSource = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink.git'
 
+		def nexusUrl = 'http://nexus3-user2-nexus.apps.advdev.openshift.opentlc.com/repository/maven-releases'
+
 		def mvnCommand = 'mvn -s .openshift/nexus_settings.xml -P openshift '
 		def mvnNonTest = mvnCommand + '-DskipTests=true -DskipITs=true -DskipUTs=true '
-
 		def prepareGitPush = 'git config user.email jenkins@example.opentlc.com && git config user.name jenkins'
-		def nexusUrl = 'http://nexus3-user2-nexus.apps.advdev.openshift.opentlc.com/repository/maven-releases'
+
+		def branchName = env.BUILD_TAG
 
     stage('Prepare') {
         git url: gitSource
 
         sh mvnNonTest + 'build-helper:parse-version versions:set -DbuildNumber=$BUILD_NUMBER \'-DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${buildNumber}\''
-
-        def branchName = $BUILD_TAG
 
         sh 'git checkout -b ' + branchName
 				sh prepareGitPush
@@ -48,7 +50,6 @@ node('maven') {
         sh mvnNonTest + "-DaltDeploymentRepository=nexus::default::$nexusUrl deploy"
 
         def pom = readMavenPom file: 'pom.xml'
-				def branchName = $BUILD_TAG
 
 				sh 'git clone ' + gitPipeline + ' pipeline'
 				sh 'cd pipeline'
