@@ -128,11 +128,11 @@ node('maven') {
     def current = currentTarget();
 		
 		if (current != "") {
-    	def new = newTarget()
+    	def switchTo = newTarget()
 
-    	input "Activate version '${env.BUILD_TAG}' by switching from '${current}' to '${new}' in environment '${prodEnv}'?"
+    	input "Activate version '${env.BUILD_TAG}' by switching from '${current}' to '${switchTo}' in environment '${prodEnv}'?"
 
-    	sh "oc patch -n ${prodEnv} route/${application} --patch '{\"spec\":{\"to\":{\"name\":\"${new}\"}}}'"
+    	sh "oc patch -n ${prodEnv} route/${application} --patch '{\"spec\":{\"to\":{\"name\":\"${switchTo}\"}}}'"
 		}
   }
 
