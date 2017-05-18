@@ -1,86 +1,155 @@
-node {
-		stage('Playground') {
-		}
-}
+#!groovy
+
+def mvn						= 'mvn -s .openshift/nexus_settings.xml -P openshift'
+def skipTests 		= '-DskipTests=true -DskipITs=true -DskipUTs=true'
+
+def prepareGitPush = "git config user.email jenkins@example.opentlc.com && git config user.name jenkins"
+
+def sonarqube 		= "http://sonarqube-user2-sonarqube.apps.advdev.openshift.opentlc.com"
+
+def credentialsId = '180c9d3f-b378-4b31-823f-386634cb906e'
+def gitSource  		= 'http://gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink.git'
+def ocpRepo  			= 'http://gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-ocp.git'
+
+def nexusUrl 			= 'http://nexus3-user2-nexus.apps.advdev.openshift.opentlc.com/repository/maven-releases'
+
+def branchName 		= env.BUILD_TAG
+
+def application		= "kitchensink"
+def testEnv				= "dev-${env.BUILD_TAG}"
+dev prodEnv				= "user2-kitchensink-prod"
 
 node('maven') {
-		def gitOCP = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-ocp.git'
-		def gitSource = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink.git'
+	stage('SCM') {
+		checkout scm
+	}
 
-		def nexusUrl = 'http://nexus3-user2-nexus.apps.advdev.openshift.opentlc.com/repository/maven-releases'
+	def pom = readMavenPom file: 'pom.xml'
+		
 
-		def mvnCommand = 'mvn -s .openshift/nexus_settings.xml -P openshift '
-		def mvnNonTest = mvnCommand + '-DskipTests=true -DskipITs=true -DskipUTs=true '
-		def prepareGitPush = 'git config user.email jenkins@example.opentlc.com && git config user.name jenkins'
+  stage('Prepare') {
+    git url: gitSource
+    sh "git checkout -b ${env.BUILD_TAG}"
 
-		def branchName = env.BUILD_TAG
-		def gitOCPBranched = gitOCP + '#' + branchName
+    sh "${mvn} ${skipTests} build-helper:parse-version versions:set -DbuildNumber=${env.BUILD_TAG} \'-DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${buildNumber}\'"
 
-    stage('Prepare') {
-        git url: gitSource
-        sh 'git checkout -b ' + branchName
-
-        sh mvnNonTest + 'build-helper:parse-version versions:set -DbuildNumber=$BUILD_NUMBER \'-DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${buildNumber}\''
-
-				sh prepareGitPush
-        sh 'git push origin ' + branchName
-    }
+		sh prepareGitPush
+    sh "git push origin ${env.BUILD_TAG}"
+  }
     
-    stage('Build') {
-        sh mvnNonTest + 'clean package'
-    }
-
-    stage('Tests') {
-//        sh $mvnCommand + 'test'
-//        junit '**/target/surefire-reports/TEST-*.xml'
-    }
-    
-    stage('Code Quality Tests') {
-//        sh mvnNonTest + '-Dsonar.host.url=http://sonarqube-user2-sonarqube.apps.advdev.openshift.opentlc.com sonar:sonar"
-    }
-    
-    stage('Publish WAR') {
-        archive 'target/*.war'
-        sh mvnNonTest + "-DaltDeploymentRepository=nexus::default::$nexusUrl deploy"
-
-        def pom = readMavenPom file: 'pom.xml'
-
-				git url: gitOCP
-
-        // first time using only > to overwrite the current file
-        sh 'echo NEXUS_HOST="'      + nexusUrl                      + '"  > .s2i/environment'
-        sh 'echo WAR_VERSION="'     + pom.version                   + '" >> .s2i/environment'
-        sh 'echo MAVEN_GROUP="'     + pom.groupId.replace('.','/')  + '" >> .s2i/environment'
-        sh 'echo MAVEN_ARTIFACT="'  + pom.artifactId                + '" >> .s2i/environment'
-        sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.artifactId + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> .s2i/environment'
-
-			  sh prepareGitPush
-        sh 'git commit -am "Build run ' + branchName + '"'
-        sh 'git tag ' + branchName
-        sh 'git push origin'
-    }
-}
-
-node { 
-	def branchName = env.BUILD_TAG		
-
-  stage('Build OpenShift Image') {
-		openshiftBuild(buildConfig: 'kitchensink-imagecreator', showBuildLogs:
-'true')
+  stage('Build') {
+    sh "${mvn} ${skipTests} clean package"
   }
 
-	stage('Integration Tests') {
-		
-	}
+  stage('Tests') {
+//    sh "${mvn} test"
+//    junit '**/target/surefire-reports/TEST-*.xml'
+  }
     
+  stage('Code Quality Tests') {
+//    sh "${mvn} ${skipTests} -Dsonar.host.url=${sonarqube} sonar:sonar"
+  }
+    
+  stage('Publish WAR') {
+    sh "${mvn} ${skipTests} -DaltDeploymentRepository=nexus::default::$nexusUrl deploy"
+
+		git url: gitOCP
+
+    sh "echo WAR_FILE_LOCATION=\"${nexusUrl}/${pom.groupId.replace('.','/')}/${pom.artifactId}/${pom.version}/${pom.artifactId}-${pom.version}.war" > .s2i/environment'
+
+		sh prepareGitPush
+    sh "git commit -am \"Build run ${env.BUILD_TAG}\""
+    sh "git tag ${env.BUILD_TAG}"
+    sh "git push origin"
+  }
+
+  stage('Prepare Test Environment') {
+		echo "Creating test environment: ${testEnv} ..."
+		sh "oc new-project ${testEnv}"
+	}
+  
+  stage('Build OpenShift Image') {
+		echo "Build the image ..."
+		openshiftBuild	bldCfg: 'kitchensink-imagecreator', 
+										showBuildLogs: 'true',
+										namespace: testEnv, 
+										checkForTriggeredDeployments: 'false',
+										verbose: 'false'
+
+		openshiftTag		destTag: env.BUILD_TAG,
+										destStream: 'kitchensink',
+										destinationNamespace: testEnv,
+										srcStream: 'kitchensink',
+										srcTag: 'latest',
+										namespace: testEnv,
+										alias: 'false',
+										verbose: 'false'
+  }
+
+	stage('Deploy to Testing Environment') {
+    echo "Deploy to Testing Environment ..."
+
+		openshiftTag		destTag: 'rft',
+										destStream: 'kitchensink',
+										destinationNamespace: testEnv,
+										srcStream: 'kitchensink',
+										srcTag: env.BUILD_TAG,
+										namespace: testEnv,
+										alias: 'false',
+										verbose: 'false'
+
+		openshiftDeploy deploymentConfig: 'kitchensink',
+										namespace: testEnv
+	}
+
+
   stage('Publish Green/Blue') {
-       
+    openshiftTag		destTag: "prod",
+										destStream: "kitchensink",
+										destinationNamespace: testEnv,
+										srcStream: 'kitchensink',
+										srcTag: env.BUILD_TAG,
+										namespace: testEnv,
+										alias: 'false',
+										verbose: 'false'
   }
     
 	stage('Go Live') {
-  	input 'Activate Version ' + branchName + '?'
-	} 
-    
-  stage('Switch Green/Blue') {
+
+		def new = newTarget()
+		def current = currentTarget();
+
+  	input "Activate version '${env.BUILD_TAG}' by switching from '${current}' to '${new}' in environment '${prodEnv}'?"
+
+		sh "oc patch -n ${prodEnv} route/tasks --patch '{\"spec\":{\"to\":{\"name\":\"${new}\"}}}'"
   }
+
+	stage('Tear Down Testing Environment') {
+		echo "Tearing down testing environment: ${testEnv} ..."
+		sh "oc delete project ${testEnv}"
+	}
+
+
+	def currentTarget() {
+		sh "oc project ${prodEnv}"
+		sh "oc get route tasks -n ${prodEnv} -o template --template='{{ .spec.to.name }}' > route-target"
+
+		def result = readFile 'route-target'
+		return result
+	}
+
+	def newTarget() {
+		def current = currentTarget()
+		def result = ""
+
+		if (current == "${application}-blue") {
+			result = "${application}-green"
+		} else if (current == "${application}-green") {
+			result = "${application}-blue"
+		} else {
+			echo "OOPS ..."
+		}
+
+		return result
+	}
 }
