@@ -12,6 +12,8 @@ node('maven') {
 
 
 		stage('Playground') {
+        git url: gitSource
+
 				def pom = readMavenPom file: 'pom.xml'
 
         sh 'git clone ' + gitPipeline + ' pipeline'
