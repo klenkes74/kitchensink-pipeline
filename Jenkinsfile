@@ -34,7 +34,7 @@ node('maven') {
   stage('Prepare') {
     sh "git checkout -b ${env.BUILD_TAG}"
 
-    sh "${mvn} ${skipTests} build-helper:parse-version versions:set -DbuildNumber=${env.BUILD_TAG} \'-DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${buildNumber}\'"
+    sh '${mvn} ${skipTests} build-helper:parse-version versions:set -DbuildNumber=' + env.BUILD_TAG + ' \'-DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${buildNumber}\''
 
     sh prepareGitPush
     sh "git push origin ${env.BUILD_TAG}"
