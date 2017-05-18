@@ -54,7 +54,7 @@ node('maven') {
 																			+ '-' + pom.version
 																			+ '.war" >> pipeline/.s2i/environment'
 
-				sh '(cd pipeline && git commit -am "Build run ' + branchName + '" && ' + prepareGitPush + 'git push origin ' + branchName + ")'
+				sh '(cd pipeline && git commit -am "Build run ' + branchName + '" && ' + prepareGitPush + 'git push origin ' + branchName + '")'
     }
     
     stage('Build OpenShift Image') {
