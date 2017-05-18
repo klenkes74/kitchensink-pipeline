@@ -17,6 +17,7 @@ node('maven') {
 				def pom = readMavenPom file: 'pom.xml'
 
         sh 'git clone ' + gitPipeline + ' pipeline'
+			  sh '(cd pipeline && ' + prepareGitPush + ')'
         sh '(cd pipeline && git checkout -b ' + branchName + ')'
 
         // first time using only > to overwrite the current file
@@ -27,7 +28,6 @@ node('maven') {
         sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> pipeline/.s2i/environment'
 
         sh '(cd pipeline && git commit -am "Build run ' + branchName + '")'
-			  sh '(cd pipeline && ' + prepareGitPush + ')'
         sh '(cd pipeline &6 git push origin ' + branchName + ')'
 }
 
