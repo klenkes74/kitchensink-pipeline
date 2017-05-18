@@ -45,30 +45,30 @@ node('maven') {
 
         def pom = readMavenPom file: 'pom.xml'
 
-        sh 'git clone ' + gitOCP + ' pipeline'
-			  sh '(cd pipeline && ' + prepareGitPush + ')'
-        sh '(cd pipeline && git checkout -b ' + branchName + ')'
+        sh 'git clone ' + gitOCP + ' ocp'
+			  sh '(cd ocp && ' + prepareGitPush + ')'
+        sh '(cd ocp && git checkout -b ' + branchName + ')'
 
         // first time using only > to overwrite the current file
-        sh 'echo NEXUS_HOST="'      + nexusUrl                      + '"  > pipeline/.s2i/environment'
-        sh 'echo WAR_VERSION="'     + pom.version                   + '" >> pipeline/.s2i/environment'
-        sh 'echo MAVEN_GROUP="'     + pom.groupId.replace('.','/')  + '" >> pipeline/.s2i/environment'
-        sh 'echo MAVEN_ARTIFACT="'  + pom.artifactId                + '" >> pipeline/.s2i/environment'
-        sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.artifactId + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> pipeline/.s2i/environment'
+        sh 'echo NEXUS_HOST="'      + nexusUrl                      + '"  > ocp/.s2i/environment'
+        sh 'echo WAR_VERSION="'     + pom.version                   + '" >> ocp/.s2i/environment'
+        sh 'echo MAVEN_GROUP="'     + pom.groupId.replace('.','/')  + '" >> ocp/.s2i/environment'
+        sh 'echo MAVEN_ARTIFACT="'  + pom.artifactId                + '" >> ocp/.s2i/environment'
+        sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.artifactId + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> ocp/.s2i/environment'
 
-				sh 'sed -e \'s|###GITREPO###|' + gitOCPBranched + '|g\' pipeline/bc-kitchensink-imagecreator.template > pipeline/bc-kitchensink-imagecreator.yaml'
-				sh '(cd pipeline && git add bc-kitchensink-imagecreator.yaml)'
+				sh 'sed -e \'s|###GITREPO###|' + gitOCPBranched + '|g\' ocp/bc-kitchensink-imagecreator.template > ocp/bc-kitchensink-imagecreator.yaml'
+				sh '(cd ocp && git add bc-kitchensink-imagecreator.yaml)'
 
-        sh '(cd pipeline && git commit -am "Build run ' + branchName + '")'
-        sh '(cd pipeline && git push origin ' + branchName + ')'
+        sh '(cd ocp && git commit -am "Build run ' + branchName + '")'
+        sh '(cd ocp && git push origin ' + branchName + ')'
     }
 }
 
 node { 
     stage('Build OpenShift Image') {
-				git url: gitOCPBranched
+				sh 'git clone ' + gitOCP + '#' + branchName + ' ocp'
+				sh 'oc create -f ocp/bc-kitchensink-imagecreator.yaml'
 
-				sh 'oc create -f bc-kitchensink-imagecreator.yaml'
 				openshiftBuild(buildConfig: 'kitchensink-imagecreator', showBuildLogs: 'true')
 				sh 'oc delete bc/kitchensink-imagecreator'
     }
