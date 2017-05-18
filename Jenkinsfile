@@ -1,16 +1,4 @@
-node {
-		sh 'echo $BUILD_TAG'
-    def branchName = env.BUILD_TAG
-    sh 'echo === Environment of host ==='
-		sh 'env'
-    sh 'echo ==========================='
-}
-
 node('maven') {
-    sh 'echo === Environment of host ==='
-		sh 'env'
-    sh 'echo ==========================='
-
 		def gitPipeline = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-pipeline.git'
 		def gitSource = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink.git'
 
@@ -21,6 +9,18 @@ node('maven') {
 		def prepareGitPush = 'git config user.email jenkins@example.opentlc.com && git config user.name jenkins'
 
 		def branchName = env.BUILD_TAG
+
+		stage('Play') {
+				git url: gitSource
+
+        sh 'git checkout -b ' + branchName
+				sh prepareGitPush
+        sh 'git push origin ' + branchName
+
+				sh 'git clone ' + gitPipeline + ' pipeline'
+				sh 'cd pipeline'
+				sh 'git checkout -b ' + branchName
+		}
 
     stage('Prepare') {
         git url: gitSource
