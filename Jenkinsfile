@@ -14,7 +14,7 @@ node('maven') {
 		def prepareGitPush = 'git config user.email jenkins@example.opentlc.com && git config user.name jenkins'
 
 		def branchName = env.BUILD_TAG
-		def gitOCPBranched = gitPipeline + '#' + branchName
+		def gitOCPBranched = gitOCP + '#' + branchName
 
     stage('Prepare') {
         git url: gitSource
