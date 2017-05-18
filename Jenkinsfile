@@ -58,7 +58,7 @@ node('maven') {
 
     git url: gitOCP
 
-    sh "echo WAR_FILE_LOCATION=\"${nexusUrl}/${pom.groupId.replace('.','/')}/${pom.artifactId}/${pom.version}/${pom.artifactId}-${pom.version}.war" > .s2i/environment'
+    sh "echo WAR_FILE_LOCATION=\"${nexusUrl}/${pom.groupId.replace('.','/')}/${pom.artifactId}/${pom.version}/${pom.artifactId}-${pom.version}.war\" > .s2i/environment"
 
     sh prepareGitPush
     sh "git commit -am \"Build run ${env.BUILD_TAG}\""
@@ -69,8 +69,6 @@ node('maven') {
   stage('Prepare Test Environment') {
     echo "Creating test environment: ${testEnv} ..."
     sh "oc new-project ${testEnv}"
-
-		sh "oc new-app -e POSTGRESQL_USER=<username> -e POSTGRESQL_PASSWORD=<password> -e POSTGRESQL_DATABASE=<database_name>
   }
   
   stage('Build OpenShift Image') {
@@ -134,7 +132,7 @@ node('maven') {
 
     	input "Activate version '${env.BUILD_TAG}' by switching from '${current}' to '${new}' in environment '${prodEnv}'?"
 
-    	sh "oc patch -n ${prodEnv} route/tasks --patch '{\"spec\":{\"to\":{\"name\":\"${new}\"}}}'"
+    	sh "oc patch -n ${prodEnv} route/${application} --patch '{\"spec\":{\"to\":{\"name\":\"${new}\"}}}'"
 		}
   }
 
