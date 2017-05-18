@@ -1,3 +1,17 @@
+node {
+		stage('Playground') {
+			git url: gitPipeline
+
+			  sh prepareGitPush
+        sh 'git checkout -b ' + branchName
+				sh 'git push'
+
+				sh 'git checkout master'
+
+			  git url: gitPipelineBranched
+		}
+}
+
 node('maven') {
 		def gitPipeline = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-pipeline.git'
 		def gitSource = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink.git'
@@ -10,18 +24,6 @@ node('maven') {
 
 		def branchName = env.BUILD_TAG
 		def gitPipelineBranched = gitPipeline + '#' + branchName
-
-		stage('Playground') {
-			git url: gitPipeline
-
-			  sh prepareGitPush
-        sh 'git checkout -b ' + branchName
-				sh 'git push'
-
-				sh 'git checkout -b master'
-
-			  git url: gitPipelineBranched
-		}
 
     stage('Prepare') {
         git url: gitSource
