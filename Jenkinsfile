@@ -10,6 +10,28 @@ node('maven') {
 
 		def branchName = env.BUILD_TAG
 
+
+		stage('Playground') {
+				def pom = readMavenPom file: 'pom.xml'
+
+        sh 'git clone ' + gitPipeline + ' pipeline'
+        sh '(cd pipeline && git checkout -b ' + branchName + ')'
+
+        // first time using only > to overwrite the current file
+        sh 'echo NEXUS_HOST="$nexusUrl"                                  > pipeline/.s2i/environment'
+        sh 'echo WAR_VERSION="'     + pom.version                   + '" >> pipeline/.s2i/environment'
+        sh 'echo MAVEN_GROUP="'     + pom.groupId.replace('.','/')  + '" >> pipeline/.s2i/environment'
+        sh 'echo MAVEN_ARTIFACT="'  + pom.artifactId                + '" >> pipeline/.s2i/environment'
+        sh 'echo WAR_FILE_LOCATION="' + nexusUrl
+                                      + '/' + pom.groupId.replace('.','/')
+                                      + '/' + pom.version
+                                      + '/' + pom.artifactId
+                                      + '-' + pom.version
+                                      + '.war" >> pipeline/.s2i/environment'
+
+        sh '(cd pipeline && git commit -am "Build run ' + branchName + '" && ' + prepareGitPush + 'git push origin ' + branchName + '")'
+}
+
     stage('Prepare') {
         git url: gitSource
 
@@ -48,7 +70,7 @@ node('maven') {
 				sh 'echo MAVEN_GROUP="'			+ pom.groupId.replace('.','/') 	+	'" >> pipeline/.s2i/environment'
 				sh 'echo MAVEN_ARTIFACT="' 	+ pom.artifactId                + '" >> pipeline/.s2i/environment'
 				sh 'echo WAR_FILE_LOCATION="' + nexusUrl
-																			+ '/' + pom.groupId.replace(".","/") 
+																			+ '/' + pom.groupId.replace('.','/') 
 																			+ '/' + pom.version
 																			+ '/' + pom.artifactId 
 																			+ '-' + pom.version
