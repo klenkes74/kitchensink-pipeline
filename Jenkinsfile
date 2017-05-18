@@ -141,24 +141,24 @@ node('maven') {
     sh "oc delete project ${testEnv}"
   }
 
+}
 
-  def currentTarget() {
-    def result = readFile 'route-target'
-    return result
+def currentTarget() {
+  def result = readFile 'route-target'
+  return result
+}
+
+def newTarget() {
+  def current = currentTarget()
+  def result = ""
+
+  if (current == routeBlue) {
+    result = routeGreen
+  } else if (current == routeGreen) {
+    result = routeBlue
+  } else {
+    echo "Sorry, route '${current}' not known. Can't generate new target!"
   }
 
-  def newTarget() {
-    def current = currentTarget()
-    def result = ""
-
-    if (current == routeBlue) {
-      result = routeGreen
-    } else if (current == routeGreen) {
-      result = routeBlue
-    } else {
-      echo "Sorry, route '${current}' not known. Can't generate new target!"
-    }
-
-    return result
-  }
+  return result
 }
