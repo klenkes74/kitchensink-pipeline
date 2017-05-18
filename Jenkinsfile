@@ -55,7 +55,7 @@ node('maven') {
         sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.artifactId + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> .s2i/environment'
 
 			  sh prepareGitPush
-        sh 'git commit -am "Build run ' + branchName + '"
+        sh 'git commit -am "Build run ' + branchName + '"'
         sh 'git tag ' + branchName
         sh 'git push origin'
     }

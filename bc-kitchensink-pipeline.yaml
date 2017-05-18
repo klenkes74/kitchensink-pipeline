@@ -27,9 +27,7 @@ items:
   spec:
     source:
       git:
-        ref: 6.4.x
-        uri:
-http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-ocp.git
+        uri: http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-ocp.git
       type: Git
     strategy:
       sourceStrategy:
