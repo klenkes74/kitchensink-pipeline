@@ -9,9 +9,12 @@ node('maven') {
 		def prepareGitPush = 'git config user.email jenkins@example.opentlc.com && git config user.name jenkins'
 
 		def branchName = env.BUILD_TAG
-
+		def gitPipelineBranched = gitPipeline + '#' + branchName
 
 		stage('Playground') {
+			git url: gitPipeline
+
+			git url: gitPipelineBranched
 		}
 
     stage('Prepare') {
@@ -54,6 +57,9 @@ node('maven') {
         sh 'echo MAVEN_ARTIFACT="'  + pom.artifactId                + '" >> pipeline/.s2i/environment'
         sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.artifactId + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> pipeline/.s2i/environment'
 
+				sh 'sed -e \'s|###GITREPO###|' + gitPipelineBranched + '|g' pipeline/bc-kitchensink-imagecreator.template > pipeline/bc-kitchensink-imagecreator.yaml'
+				sh '(cd pipeline && git add bc-kitchensink-imagecreator.yaml)'
+
         sh '(cd pipeline && git commit -am "Build run ' + branchName + '")'
         sh '(cd pipeline && git push origin ' + branchName + ')'
     }
@@ -61,7 +67,11 @@ node('maven') {
 
 node('oc') { 
     stage('Build OpenShift Image') {
+				git url: gitPipelineBranched
+
+				sh 'oc create -f bc-kitchensink-imagecreator.yaml'
 				openshiftBuild(buildConfig: 'kitchensink-imagecreator', showBuildLogs:
+				sh 'oc delete bc/kitchensink-imagecreator'
 'true')
     }
     
