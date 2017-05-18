@@ -48,18 +48,21 @@ node('maven') {
         sh '(cd pipeline && git checkout -b ' + branchName + ')'
 
         // first time using only > to overwrite the current file
-        sh 'echo NEXUS_HOST="$nexusUrl"                                  > pipeline/.s2i/environment'
+        sh 'echo NEXUS_HOST="'      + nexusUrl                      + '"  > pipeline/.s2i/environment'
         sh 'echo WAR_VERSION="'     + pom.version                   + '" >> pipeline/.s2i/environment'
         sh 'echo MAVEN_GROUP="'     + pom.groupId.replace('.','/')  + '" >> pipeline/.s2i/environment'
         sh 'echo MAVEN_ARTIFACT="'  + pom.artifactId                + '" >> pipeline/.s2i/environment'
-        sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> pipeline/.s2i/environment'
+        sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.artifactId + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> pipeline/.s2i/environment'
 
         sh '(cd pipeline && git commit -am "Build run ' + branchName + '")'
         sh '(cd pipeline && git push origin ' + branchName + ')'
     }
-    
+}
+
+node('oc') { 
     stage('Build OpenShift Image') {
-				
+				openshiftBuild(buildConfig: 'kitchensink-imagecreator', showBuildLogs:
+'true')
     }
     
     stage('Publish Green/Blue') {
@@ -67,7 +70,7 @@ node('maven') {
     }
     
 		stage('Go Live') {
-    	input 'Activate Version ' + $BUILD_TAG + '?'
+    	input 'Activate Version ' + branchName + '?'
 		} 
     
     stage('Switch Green/Blue') {
