@@ -17,3 +17,36 @@ items:
       type: "JenkinsPipeline"
       jenkinsPipelineStrategy:
         jenkinsfilePath: Jenkinsfile
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: kitchensink
+    name: kitchensink-imagecreator
+    namespace: user2-jenkins
+  spec:
+    source:
+      git:
+        ref: 6.4.x
+        uri:
+http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-ocp.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: jboss-eap64-openshift:1.4
+          namespace: openshift
+      type: Source
+    triggers:
+    - generic:
+        secret: 6468243e6c96eee0
+      type: Generic
+    - github:
+        secret: e1adbfbdf2dd04c0
+      type: GitHub
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0
+
