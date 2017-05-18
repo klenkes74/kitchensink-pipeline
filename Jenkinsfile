@@ -12,24 +12,7 @@ node('maven') {
 
 
 		stage('Playground') {
-        git url: gitSource
-
-				def pom = readMavenPom file: 'pom.xml'
-
-        sh 'git clone ' + gitPipeline + ' pipeline'
-			  sh '(cd pipeline && ' + prepareGitPush + ')'
-        sh '(cd pipeline && git checkout -b ' + branchName + ')'
-
-        // first time using only > to overwrite the current file
-        sh 'echo NEXUS_HOST="$nexusUrl"                                  > pipeline/.s2i/environment'
-        sh 'echo WAR_VERSION="'     + pom.version                   + '" >> pipeline/.s2i/environment'
-        sh 'echo MAVEN_GROUP="'     + pom.groupId.replace('.','/')  + '" >> pipeline/.s2i/environment'
-        sh 'echo MAVEN_ARTIFACT="'  + pom.artifactId                + '" >> pipeline/.s2i/environment'
-        sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> pipeline/.s2i/environment'
-
-        sh '(cd pipeline && git commit -am "Build run ' + branchName + '")'
-        sh '(cd pipeline && git push origin ' + branchName + ')'
-}
+		}
 
     stage('Prepare') {
         git url: gitSource
@@ -60,22 +43,19 @@ node('maven') {
 
         def pom = readMavenPom file: 'pom.xml'
 
-				sh 'git clone ' + gitPipeline + ' pipeline'
-				sh '(cd pipeline && git checkout -b ' + branchName + ')'
+        sh 'git clone ' + gitPipeline + ' pipeline'
+			  sh '(cd pipeline && ' + prepareGitPush + ')'
+        sh '(cd pipeline && git checkout -b ' + branchName + ')'
 
-				// first time using only > to overwrite the current file
-				sh 'echo NEXUS_HOST="$nexusUrl" 																 > pipeline/.s2i/environment'
-				sh 'echo WAR_VERSION="'			+ pom.version 									+ '" >> pipeline/.s2i/environment'
-				sh 'echo MAVEN_GROUP="'			+ pom.groupId.replace('.','/') 	+	'" >> pipeline/.s2i/environment'
-				sh 'echo MAVEN_ARTIFACT="' 	+ pom.artifactId                + '" >> pipeline/.s2i/environment'
-				sh 'echo WAR_FILE_LOCATION="' + nexusUrl
-																			+ '/' + pom.groupId.replace('.','/') 
-																			+ '/' + pom.version
-																			+ '/' + pom.artifactId 
-																			+ '-' + pom.version
-																			+ '.war" >> pipeline/.s2i/environment'
+        // first time using only > to overwrite the current file
+        sh 'echo NEXUS_HOST="$nexusUrl"                                  > pipeline/.s2i/environment'
+        sh 'echo WAR_VERSION="'     + pom.version                   + '" >> pipeline/.s2i/environment'
+        sh 'echo MAVEN_GROUP="'     + pom.groupId.replace('.','/')  + '" >> pipeline/.s2i/environment'
+        sh 'echo MAVEN_ARTIFACT="'  + pom.artifactId                + '" >> pipeline/.s2i/environment'
+        sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> pipeline/.s2i/environment'
 
-				sh '(cd pipeline && git commit -am "Build run ' + branchName + '" && ' + prepareGitPush + 'git push origin ' + branchName + '")'
+        sh '(cd pipeline && git commit -am "Build run ' + branchName + '")'
+        sh '(cd pipeline && git push origin ' + branchName + ')'
     }
     
     stage('Build OpenShift Image') {
