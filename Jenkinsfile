@@ -63,7 +63,7 @@ node('maven') {
         sh 'echo MAVEN_ARTIFACT="'  + pom.artifactId                + '" >> pipeline/.s2i/environment'
         sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.artifactId + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> pipeline/.s2i/environment'
 
-				sh 'sed -e \'s|###GITREPO###|' + gitPipelineBranched + '|g' + pipeline/bc-kitchensink-imagecreator.template > pipeline/bc-kitchensink-imagecreator.yaml'
+				sh 'sed -e \'s|###GITREPO###|' + gitPipelineBranched + '|g\' pipeline/bc-kitchensink-imagecreator.template > pipeline/bc-kitchensink-imagecreator.yaml'
 				sh '(cd pipeline && git add bc-kitchensink-imagecreator.yaml)'
 
         sh '(cd pipeline && git commit -am "Build run ' + branchName + '")'
