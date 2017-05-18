@@ -1,13 +1,11 @@
 node {
     sh 'echo === Environment of host ==='
-		sh 'hostname'
 		sh 'env'
     sh 'echo ==========================='
 }
 
 node('maven') {
     sh 'echo === Environment of host ==='
-		sh 'hostname'
 		sh 'env'
     sh 'echo ==========================='
 
