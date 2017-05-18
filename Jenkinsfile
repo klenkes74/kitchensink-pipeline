@@ -1,7 +1,9 @@
 node('maven') {
+		def gitPipeline = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-pipeline.git'
+		def gitSource = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink.git'
+
     stage('Prepare') {
-        git url:
-'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink.git'
+        git url: gitSource
 
         sh 'mvn -s .openshift/nexus_settings.xml -P openshift build-helper:parse-version versions:set -DbuildNumber=$BUILD_NUMBER \'-DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${buildNumber}\''
         def pom = readMavenPom file: 'pom.xml'
@@ -29,15 +31,38 @@ node('maven') {
 //        sonar:sonar"
     }
     
-    stage('Publish') {
+    stage('Publish WAR') {
         archive 'target/*.war'
         sh "mvn -s .openshift/nexus_settings.xml -P openshift -DskipTests=true -DskipITs=true -DskipUTs=true -DaltDeploymentRepository=nexus::default::http://nexus3-user2-nexus.apps.advdev.openshift.opentlc.com/repository/maven-releases deploy"
+
+        def pom = readMavenPom file: 'pom.xml'
+
+				sh 'git $gitPipeline pipeline'
+				sh 'cd pipeline'
+				sh 'git checkout -b build-' + pom.version
+
+				// first time using only > to overwrite the current file
+				sh 'echo NEXUS_HOST="$nexusUrl" 																 >  .s2i/environment'
+				sh 'echo WAR_VERSION="'			+ pom.version 									+ '" >> .s2i/environment'
+				sh 'echo MAVEN_GROUP="'			+ pom.groupId.replace('.','/') 	+	'" >> .s2i/environment'
+				sh 'echo MAVEN_ARTIFACT="' 	+ pom.artifactId                + '" >> .s2i/environment'
+				sh 'echo WAR_FILE_LOCATION="' + nexusUrl
+																			+ '/' + pom.groupId.replace(".","/") 
+																			+ '/' + pom.version
+																			+ '/' + pom.artifactId 
+																			+ '-' + pom.version
+																			+ '.war" >> .s2i/environment'
+
+				sh 'git commit -am "Build ' + pom.version + '"'
+        sh 'git config user.email jenkins@example.opentlc.com && git config user.name jenkins'
+        sh 'git push origin build-' + pom.version
     }
     
     stage('Build OpenShift Image') {
+				
     }
     
-    stage('Deploy Green/Blue') {
+    stage('Publish Green/Blue') {
         
     }
     
