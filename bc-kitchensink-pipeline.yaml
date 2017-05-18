@@ -47,4 +47,14 @@ items:
       type: ImageChange
   status:
     lastVersion: 0
-
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: kitchensink
+    namespace: user2-nexus
+    labels:
+      template: jboss-eap64-openshift
+      app: kitchensink
+  spec:
+  status:
+    dockerImageRepository: 172.30.176.124:5000/user2-jenkins/kitchensink

@@ -62,19 +62,25 @@ node('maven') {
 }
 
 node { 
-		def branchName = env.BUILD_TAG		
+	def branchName = env.BUILD_TAG		
 
-    stage('Build OpenShift Image') {
-    }
+  stage('Build OpenShift Image') {
+		openshiftBuild(buildConfig: 'kitchensink-imagecreator', showBuildLogs:
+'true')
+  }
+
+	stage('Integration Tests') {
+		
+	}
     
-    stage('Publish Green/Blue') {
-        
-    }
+  stage('Publish Green/Blue') {
+       
+  }
     
-		stage('Go Live') {
-    	input 'Activate Version ' + branchName + '?'
-		} 
+	stage('Go Live') {
+  	input 'Activate Version ' + branchName + '?'
+	} 
     
-    stage('Switch Green/Blue') {
-    }
+  stage('Switch Green/Blue') {
+  }
 }
