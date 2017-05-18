@@ -71,7 +71,8 @@ node {
 		def branchName = env.BUILD_TAG		
 
     stage('Build OpenShift Image') {
-				sh 'git clone ' + gitOCP + '#' + branchName + ' ocp'
+				sh 'git clone ' + gitOCP + ' ocp'
+				sh 'git branch ' + branchName
 				sh 'oc create -f ocp/bc-kitchensink-imagecreator.yaml'
 
 				openshiftBuild(buildConfig: 'kitchensink-imagecreator', showBuildLogs: 'true')
