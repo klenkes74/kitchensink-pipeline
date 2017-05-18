@@ -23,8 +23,7 @@ node('maven') {
 
         sh mvnNonTest + 'build-helper:parse-version versions:set -DbuildNumber=$BUILD_NUMBER \'-DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${buildNumber}\''
 
-        def pom = readMavenPom file: 'pom.xml'
-        def branchName = 'build-' + pom.version
+        def branchName = $BUILD_TAG
 
         sh 'git checkout -b ' + branchName
 				sh prepareGitPush
@@ -49,9 +48,9 @@ node('maven') {
         sh mvnNonTest + "-DaltDeploymentRepository=nexus::default::$nexusUrl deploy"
 
         def pom = readMavenPom file: 'pom.xml'
-				def branchName = 'build-' + pom.version
+				def branchName = $BUILD_TAG
 
-				sh 'git ' + gitPipeline + ' pipeline'
+				sh 'git clone ' + gitPipeline + ' pipeline'
 				sh 'cd pipeline'
 				sh 'git checkout -b ' + branchName
 
@@ -81,10 +80,7 @@ node('maven') {
     }
     
 		stage('Go Live') {
-			def pom = readMavenPom file: 'pom.xml'
-			def branchName = 'build-' + pom.version
-
-    	input 'Activate Version ' + branchName + '?'
+    	input 'Activate Version ' + $BUILD_TAG + '?'
 		} 
     
     stage('Switch Green/Blue') {
