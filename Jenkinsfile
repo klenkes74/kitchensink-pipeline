@@ -1,4 +1,16 @@
+node {
+    sh 'echo === Environment of host ==='
+		sh 'hostname'
+		sh 'env'
+    sh 'echo ==========================='
+}
+
 node('maven') {
+    sh 'echo === Environment of host ==='
+		sh 'hostname'
+		sh 'env'
+    sh 'echo ==========================='
+
 		def gitPipeline = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-pipeline.git'
 		def gitSource = 'http://jenkins:jenkins@gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink.git'
 
@@ -22,18 +34,16 @@ node('maven') {
     }
     
     stage('Build') {
-        sh "mvn -s .openshift/nexus_settings.xml -P openshift -DskipTests=true -DskipITs=true -DskipUTs=true clean package"
+        sh mvnNonTest + 'clean package'
     }
 
     stage('Tests') {
-//        sh "mvn -s .openshift/nexus_settings.xml -P openshift test"
+//        sh $mvnCommand + 'test'
 //        junit '**/target/surefire-reports/TEST-*.xml'
     }
     
     stage('Code Quality Tests') {
-//        sh "mvn -s .openshift/nexus_settings.xml -P openshift -DskipTests=true
-//        -DskipITs=true -DskipUTs=true
-//				sh mvnNonTest + '-Dsonar.host.url=http://sonarqube-user2-sonarqube.apps.advdev.openshift.opentlc.com sonar:sonar"
+//        sh mvnNonTest + '-Dsonar.host.url=http://sonarqube-user2-sonarqube.apps.advdev.openshift.opentlc.com sonar:sonar"
     }
     
     stage('Publish WAR') {
@@ -43,7 +53,7 @@ node('maven') {
         def pom = readMavenPom file: 'pom.xml'
 				def branchName = 'build-' + pom.version
 
-				sh 'git $gitPipeline pipeline'
+				sh 'git ' + gitPipeline + ' pipeline'
 				sh 'cd pipeline'
 				sh 'git checkout -b ' + branchName
 
