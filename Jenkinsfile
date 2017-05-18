@@ -25,13 +25,13 @@ def prodEnv      	= "user2-kitchensink-prod"
 node('maven') {
   stage('SCM') {
     checkout scm
+
+    git url: gitSource
   }
 
   def pom = readMavenPom file: 'pom.xml'
-    
 
   stage('Prepare') {
-    git url: gitSource
     sh "git checkout -b ${env.BUILD_TAG}"
 
     sh "${mvn} ${skipTests} build-helper:parse-version versions:set -DbuildNumber=${env.BUILD_TAG} \'-DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}-${buildNumber}\'"
