@@ -24,12 +24,7 @@ node('maven') {
         sh 'echo WAR_VERSION="'     + pom.version                   + '" >> pipeline/.s2i/environment'
         sh 'echo MAVEN_GROUP="'     + pom.groupId.replace('.','/')  + '" >> pipeline/.s2i/environment'
         sh 'echo MAVEN_ARTIFACT="'  + pom.artifactId                + '" >> pipeline/.s2i/environment'
-        sh 'echo WAR_FILE_LOCATION="' + nexusUrl
-                                      + '/' + pom.groupId.replace('.','/')
-                                      + '/' + pom.version
-                                      + '/' + pom.artifactId
-                                      + '-' + pom.version
-                                      + '.war" >> pipeline/.s2i/environment'
+        sh 'echo WAR_FILE_LOCATION="' + nexusUrl + '/' + pom.groupId.replace('.','/') + '/' + pom.version + '/' + pom.artifactId + '-' + pom.version + '.war" >> pipeline/.s2i/environment'
 
         sh '(cd pipeline && git commit -am "Build run ' + branchName + '" && ' + prepareGitPush + 'git push origin ' + branchName + '")'
 }
