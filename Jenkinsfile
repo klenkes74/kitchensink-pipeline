@@ -63,7 +63,7 @@ node('maven') {
     sh prepareGitPush
     sh "git commit -am \"Build run ${env.BUILD_TAG}\""
     sh "git tag ${env.BUILD_TAG}"
-    sh "git push origin"
+    sh "git push origin --tags"
   }
 
   stage('Prepare Test Environment') {
