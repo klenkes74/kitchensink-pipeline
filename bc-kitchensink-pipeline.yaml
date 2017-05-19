@@ -7,7 +7,7 @@ items:
   metadata:
     name: "kitchensink-pipeline"
     labels:
-			app: kitchensink
+      app: kitchensink
   spec:
     source:
       type: "Git"

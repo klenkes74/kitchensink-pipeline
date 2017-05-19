@@ -1,0 +1,273 @@
+apiVersion: v1
+kind: List
+metadata: {}
+items:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: kitchensink
+    name: kitchensink
+  spec: {}
+  status:
+    dockerImageRepository: ""
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: kitchensink
+    name: kitchensink
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: kitchensink:latest
+    postCommit: {}
+    resources: {}
+    source:
+      git:
+        uri: http://gogs-user2-gogs.apps.advdev.openshift.opentlc.com/rlichti/kitchensink-ocp.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: jboss-eap64-openshift:latest
+          namespace: openshift
+      type: Source
+    triggers:
+    - github:
+        secret: tKj-m4f6KRyOmSuq50jZ
+      type: GitHub
+    - generic:
+        secret: wJaJAsvhKqtEzXUjvERw
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: kitchensink
+      deployment: green
+    name: kitchensink-green
+  spec:
+    replicas: 1
+    selector:
+      app: kitchensink
+      deploymentconfig: kitchensink-green
+    strategy:
+      resources: {}
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: kitchensink
+          deploymentconfig: kitchensink-green
+      spec:
+        containers:
+        - image: kitchensink:latest
+          name: kitchensink
+          ports:
+          - containerPort: 8443
+            protocol: TCP
+          - containerPort: 8778
+            protocol: TCP
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 5432
+            protocol: TCP
+          resources: {}
+          env:
+          - name: DB_SERVICE_PREFIX_MAPPING
+            value: kitchensink-postgresql=DB
+          - name: DB_JNDI
+            value: java:jboss/datasources/KitchensinkAngularJSQuickstartDS
+          - name: DB_DATABASE
+            value: kitchensink
+          - name: DB_USERNAME
+            value: kitchensink
+          - name: DB_PASSWORD
+            value: kitchensink
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: false
+        containerNames:
+        - kitchensink
+        from:
+          kind: ImageStreamTag
+          name: kitchensink:latest
+      type: ImageChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: kitchensink
+      deployment: blue
+    name: kitchensink-blue
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: kitchensink-blue
+    strategy:
+      resources: {}
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: kitchensink
+          deploymentconfig: kitchensink-blue
+      spec:
+        containers:
+        - image: kitchensink:latest
+          name: kitchensink
+          ports:
+          - containerPort: 8443
+            protocol: TCP
+          - containerPort: 8778
+            protocol: TCP
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 5432
+            protocol: TCP
+          env:
+          - name: DB_SERVICE_PREFIX_MAPPING
+            value: kitchensink-postgresql=DB
+          - name: DB_JNDI
+            value: java:jboss/datasources/KitchensinkAngularJSQuickstartDS
+          - name: DB_DATABASE
+            value: kitchensink
+          - name: DB_USERNAME
+            value: kitchensink
+          - name: DB_PASSWORD
+            value: kitchensink
+          resources: {}
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: false
+        containerNames:
+        - kitchensink-blue
+        from:
+          kind: ImageStreamTag
+          name: kitchensink:latest
+      type: ImageChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: kitchensink
+      deployment: green
+    name: kitchensink-green
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+    - name: 5432-tcp
+      port: 5432
+      protocol: TCP
+      targetPort: 5432
+    selector:
+      app: kitchensink
+      deploymentconfig: kitchensink-green
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: kitchensink
+      deployment: blue
+    name: kitchensink-blue
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: 8778-tcp
+      port: 8778
+      protocol: TCP
+      targetPort: 8778
+    - name: 5432-tcp
+      port: 5432
+      protocol: TCP
+      targetPort: 5432
+    selector:
+      app: kitchensink
+      deploymentconfig: kitchensink-blue
+  status:
+    loadBalancer: {}
+- kind: Route
+  apiVersion: v1
+  metadata:
+    labels:
+      name: kitchensink
+      app: kitchensink
+    name: kitchensink
+    namespace: user2-kitchensink-prod
+  spec:
+    host: user2-kitchensink-prod.apps.advdev.openshift.opentlc.com
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: kitchensink-green
+      weight: 100
+    wildcardPolicy: None
